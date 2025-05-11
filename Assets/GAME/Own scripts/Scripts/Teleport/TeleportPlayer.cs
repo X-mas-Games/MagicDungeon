@@ -1,42 +1,48 @@
 using UnityEngine;
-using UnityEngine.Serialization;
+using System.Collections;
 
 public class TeleportPlayer : MonoBehaviour
 {
     [SerializeField] private Transform _teleportDestination;
-    [SerializeField] private Vector3 _teleportOffset = Vector3.zero; 
+    [SerializeField] private Vector3 _teleportOffset = Vector3.zero;
+    [SerializeField] private float _teleportDelay;
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player")) 
+        if (other.CompareTag("Player"))
         {
-            Teleport(other);
+            StartCoroutine(TeleportAfterDelay(other));
         }
     }
 
+    private IEnumerator TeleportAfterDelay(Collider player) // Coroutine that waits a specified delay before teleporting
+    {
+        if (_teleportDelay > 0f)
+            yield return new WaitForSeconds(_teleportDelay);
+
+        Teleport(player);
+    }
+
+  
     private void Teleport(Collider player)
     {
-        if (_teleportDestination == null)
+        if (!_teleportDestination)
         {
             Debug.LogError("Teleport destination not assigned", this);
             return;
         }
+               
+        Vector3 targetPosition = _teleportDestination.position + _teleportOffset;  // Calculate initial position the teleport
 
-        CharacterController controller = player.GetComponent<CharacterController>();
-
-        Vector3 targetPosition = _teleportDestination.position + _teleportOffset;
-
-        if (controller != null)
+        if (player.TryGetComponent(out CharacterController controller))
         {
-            controller.enabled = false; // Disable CharacterController to avoid physics issues
+            controller.enabled = false;
             player.transform.position = targetPosition;
-            controller.enabled = true; // Re-enable it after teleportation
+            controller.enabled = true;
         }
         else
         {
             player.transform.position = targetPosition;
         }
-
-      
     }
 }
