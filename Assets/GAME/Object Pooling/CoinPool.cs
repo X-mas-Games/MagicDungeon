@@ -6,12 +6,12 @@ using UnityEngine.Serialization;
 public class CoinPool : MonoBehaviour
 {
     public static CoinPool Instance;
-
-    [FormerlySerializedAs("CoinPrefab")]
+    private int _currentSpawnIndex = 0;
+    
     [Header("Монеты и Пул")]
     [SerializeField] private GameObject _coinPrefab;
-    [SerializeField] private int _initialPoolSize = 50;
-    [SerializeField] private  float _respawnDelay = 5f;
+    [SerializeField] private int _initialPoolSize ;
+    [SerializeField] private  float _respawnDelay ;
     
     [Header("Зоны Появления")]
     [SerializeField] private  Transform[] _spawnZones; 
@@ -50,7 +50,7 @@ public class CoinPool : MonoBehaviour
         {
             if (!coin.activeInHierarchy)
             {
-                coin.transform.position = GetRandomSpawnPosition();
+                coin.transform.position = GetNextSpawnPosition();
                 coin.SetActive(true);
             }
         }
@@ -65,11 +65,11 @@ public class CoinPool : MonoBehaviour
     private IEnumerator RespawnCoinAfterDelay(GameObject coin)
     {
         yield return new WaitForSeconds(_respawnDelay);
-        coin.transform.position = GetRandomSpawnPosition();
+        coin.transform.position = GetNextSpawnPosition();
         coin.SetActive(true);
     }
 
-    private Vector3 GetRandomSpawnPosition()
+    private Vector3 GetNextSpawnPosition()
     {
         if (_spawnZones == null || _spawnZones.Length == 0)
         {
@@ -77,16 +77,12 @@ public class CoinPool : MonoBehaviour
             return Vector3.zero;
         }
 
-        Transform zone = _spawnZones[Random.Range(0, _spawnZones.Length)];
-        Vector3 center = zone.position;
-        float range = 2f; // Разброс вокруг центра зоны
+        Transform zone = _spawnZones[_currentSpawnIndex];
+        _currentSpawnIndex = (_currentSpawnIndex + 1) % _spawnZones.Length; // increases the index by 1 and resets it if it is out of bounds of the array
 
-        return new Vector3(
-            center.x + Random.Range(-range, range),
-            center.y,
-            center.z + Random.Range(-range, range)
-        );
+        return zone.position;
     }
+
 
     public GameObject GetCoin()
     {
